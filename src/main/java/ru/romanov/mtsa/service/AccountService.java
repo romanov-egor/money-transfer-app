@@ -7,11 +7,15 @@ import java.util.List;
 
 public interface AccountService {
 
-    public void createAccount(String holderName, double balance);
+    public Account createAccount(String holderName, double balance);
 
     public void transferMoney(long senderId, long recipientId, double transferAmount);
 
     public Account getAccount(long id);
 
     public List<Account> getAccounts();
+
+    Account updateAccount(long accountId, String holderName, double balance);
+
+    void deleteAccount(long accountId);
 }

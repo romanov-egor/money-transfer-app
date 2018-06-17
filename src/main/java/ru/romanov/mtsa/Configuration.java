@@ -1,5 +1,7 @@
 package ru.romanov.mtsa;
 
+import org.glassfish.jersey.jackson.JacksonFeature;
+import ru.romanov.mtsa.servlet.AccountServlet;
 import ru.romanov.mtsa.servlet.HelloWorldServlet;
 
 import javax.ws.rs.core.Application;
@@ -13,7 +15,8 @@ public class Configuration extends Application{
     @Override
     public Set<Class<?>> getClasses() {
         final Set<Class<?>> classes = new HashSet<Class<?>>( );
-        classes.add(HelloWorldServlet.class );
+        classes.add(JacksonFeature.class);
+        classes.add(AccountServlet.class);
         return classes;
     }
 }

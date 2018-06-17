@@ -24,8 +24,9 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void createAccount(String holderName, double balance) {
-        accountRepository.create(holderName, balance);
+    public Account createAccount(String holderName, double balance) {
+        long id = accountRepository.create(holderName, balance);
+        return accountRepository.get(id);
     }
 
     @Override
@@ -41,5 +42,22 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public List<Account> getAccounts() {
         return accountRepository.getAll();
+    }
+
+    @Override
+    public Account updateAccount(long accountId, String holderName, double balance) {
+        Account account = new Account();
+        account.setId(accountId);
+        account.setHolderName(holderName);
+        account.setBalance(balance);
+
+        accountRepository.update(account);
+
+        return account;
+    }
+
+    @Override
+    public void deleteAccount(long accountId) {
+        accountRepository.delete(accountId);
     }
 }

@@ -25,9 +25,9 @@ public class Main {
         tomcat.getHost().setAppBase(APP_BASE);
         Context context = tomcat.addWebapp(CONTEXT_PATH, APP_BASE);
 
-        tomcat.addServlet(context, "hello-world-servlet",
+        tomcat.addServlet(context, "mtsa-servlet",
                 new ServletContainer(new ResourceConfig(new Configuration().getClasses())));
-        context.addServletMappingDecoded("/*", "hello-world-servlet");
+        context.addServletMappingDecoded("/*", "mtsa-servlet");
 
         try {
             tomcat.start();
