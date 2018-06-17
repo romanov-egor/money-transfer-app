@@ -1,69 +1,94 @@
 package ru.romanov.mtsa.persistence.repository;
 
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import ru.romanov.mtsa.persistence.HibernateSessionFactory;
 import ru.romanov.mtsa.persistence.entity.Account;
+import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
+import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 
 import java.util.List;
 
 public class AccountRepository {
 
-    public Account get(long id) {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
-
+    public Account get(long id) throws NoSuchAccountException, ApplicationPersistenceException {
+        Session session = openSession();
         Account account = session.get(Account.class, id);
 
-        session.close();
+        if (null == account) {
+            throw new NoSuchAccountException();
+        }
 
+        closeSession(session);
         return account;
     }
 
-    public List<Account> getAll() {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
+    public List<Account> getAll() throws ApplicationPersistenceException {
+        Session session = openSession();
 
         List<Account> accounts = session.createQuery("from Account").list();
 
-        session.close();
+        closeSession(session);
 
         return accounts;
     }
 
-    public long create(String holderName, double balance) {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
+    public Account create(Account account) throws ApplicationPersistenceException{
+        Session session = openSession();
         Transaction transaction = session.beginTransaction();
-
-        Account account = new Account();
-        account.setHolderName(holderName);
-        account.setBalance(balance);
 
         Long id = (Long) session.save(account);
 
-        transaction.commit();
-        session.close();
+        if (null == id) {
+            throw new ApplicationPersistenceException("Unable to create new account");
+        }
 
-        return id;
+        transaction.commit();
+        closeSession(session);
+
+        account.setId(id);
+        return account;
     }
 
-    public void update(Account account) {
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
+    public void update(Account account) throws NoSuchAccountException, ApplicationPersistenceException {
+        //Existence check
+        get(account.getId());
+
+        Session session = openSession();
         Transaction transaction = session.beginTransaction();
 
         session.update(account);
 
         transaction.commit();
-        session.close();
+        closeSession(session);
     }
 
-    public void delete(long id) {
+    public void delete(long id) throws NoSuchAccountException, ApplicationPersistenceException{
         Account account = get(id);
 
-        Session session = HibernateSessionFactory.getSessionFactory().openSession();
+        Session session = openSession();
         Transaction transaction = session.beginTransaction();
 
         session.delete(account);
 
         transaction.commit();
-        session.close();
+        closeSession(session);
+    }
+
+    private Session openSession() throws ApplicationPersistenceException {
+        try {
+            return HibernateSessionFactory.getSessionFactory().openSession();
+        } catch (HibernateException e) {
+            throw new ApplicationPersistenceException("Unable to open hibernate session", e);
+        }
+    }
+
+    private void closeSession(Session session) {
+        try {
+            session.close();
+        } catch (HibernateException e) {
+            throw new ApplicationPersistenceException("Unable to close hibernate session", e);
+        }
     }
 }

@@ -19,8 +19,7 @@ public class TransferServlet {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response transferMoney(TransferJsonModel transferData) {
-        accountService.transferMoney(transferData.getSenderId(), transferData.getRecipientId(),
-                transferData.getTransferAmount());
+
         return Response.status(200).build();
     }
 }

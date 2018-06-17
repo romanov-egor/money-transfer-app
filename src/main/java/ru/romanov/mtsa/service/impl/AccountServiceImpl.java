@@ -1,10 +1,15 @@
 package ru.romanov.mtsa.service.impl;
 
+import ru.romanov.mtsa.converter.ModelConverter;
 import ru.romanov.mtsa.persistence.entity.Account;
+import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
+import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 import ru.romanov.mtsa.persistence.repository.AccountRepository;
 import ru.romanov.mtsa.service.AccountService;
+import ru.romanov.mtsa.servlet.model.AccountJsonModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AccountServiceImpl implements AccountService {
 
@@ -24,40 +29,29 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account createAccount(String holderName, double balance) {
-        long id = accountRepository.create(holderName, balance);
-        return accountRepository.get(id);
+    public AccountJsonModel getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException {
+        return ModelConverter.toJsonModel(accountRepository.get(id));
     }
 
     @Override
-    public void transferMoney(long senderId, long recipientId, double transferAmount) {
-
+    public List<AccountJsonModel> getAccounts() throws ApplicationPersistenceException {
+        return accountRepository.getAll().stream().map(ModelConverter::toJsonModel).collect(Collectors.toList());
     }
 
     @Override
-    public Account getAccount(long id) {
-        return accountRepository.get(id);
+    public AccountJsonModel createAccount(AccountJsonModel accountJsonModel) throws ApplicationPersistenceException {
+        Account createdAccount = accountRepository.create(ModelConverter.toPersistenceModel(accountJsonModel));
+        return ModelConverter.toJsonModel(createdAccount);
     }
 
     @Override
-    public List<Account> getAccounts() {
-        return accountRepository.getAll();
+    public void updateAccount(AccountJsonModel accountJsonModel) throws NoSuchAccountException,
+            ApplicationPersistenceException {
+        accountRepository.update(ModelConverter.toPersistenceModel(accountJsonModel));
     }
 
     @Override
-    public Account updateAccount(long accountId, String holderName, double balance) {
-        Account account = new Account();
-        account.setId(accountId);
-        account.setHolderName(holderName);
-        account.setBalance(balance);
-
-        accountRepository.update(account);
-
-        return account;
-    }
-
-    @Override
-    public void deleteAccount(long accountId) {
+    public void deleteAccount(long accountId) throws NoSuchAccountException, ApplicationPersistenceException {
         accountRepository.delete(accountId);
     }
 }

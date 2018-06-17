@@ -1,21 +1,22 @@
 package ru.romanov.mtsa.service;
 
 import ru.romanov.mtsa.persistence.entity.Account;
+import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
+import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 import ru.romanov.mtsa.persistence.repository.AccountRepository;
+import ru.romanov.mtsa.servlet.model.AccountJsonModel;
 
 import java.util.List;
 
 public interface AccountService {
 
-    public Account createAccount(String holderName, double balance);
+    AccountJsonModel getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException;
 
-    public void transferMoney(long senderId, long recipientId, double transferAmount);
+    List<AccountJsonModel> getAccounts() throws ApplicationPersistenceException;
 
-    public Account getAccount(long id);
+    AccountJsonModel createAccount(AccountJsonModel accountJsonModel) throws ApplicationPersistenceException;
 
-    public List<Account> getAccounts();
+    void updateAccount(AccountJsonModel accountJsonModel) throws NoSuchAccountException, ApplicationPersistenceException;
 
-    Account updateAccount(long accountId, String holderName, double balance);
-
-    void deleteAccount(long accountId);
+    void deleteAccount(long accountId) throws NoSuchAccountException, ApplicationPersistenceException;
 }

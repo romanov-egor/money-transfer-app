@@ -2,7 +2,6 @@ package ru.romanov.mtsa;
 
 import org.glassfish.jersey.jackson.JacksonFeature;
 import ru.romanov.mtsa.servlet.AccountServlet;
-import ru.romanov.mtsa.servlet.HelloWorldServlet;
 
 import javax.ws.rs.core.Application;
 import java.util.HashSet;
