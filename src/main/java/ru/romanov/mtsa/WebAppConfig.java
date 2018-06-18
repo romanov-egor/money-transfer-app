@@ -9,17 +9,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Web application configuration
- *
  * @author Egor Romanov
  */
-public class Configuration extends Application{
+public class WebAppConfig extends Application{
 
-    public Configuration( ) {}
+    public WebAppConfig( ) {}
 
     @Override
     public Set<Class<?>> getClasses() {
         final Set<Class<?>> classes = new HashSet<Class<?>>( );
+        // JacksonFeature class is necessary to enable producing and consuming JSON
         classes.add(JacksonFeature.class);
         classes.add(AccountServlet.class);
         classes.add(TransferServlet.class);

@@ -6,7 +6,7 @@ package ru.romanov.mtsa.service.exception;
  *
  * @author Egor Romanov
  */
-public class NotEnoughMoneyForTransferException extends RuntimeException {
+public class NotEnoughMoneyForTransferException extends Exception {
 
     public NotEnoughMoneyForTransferException() {
     }

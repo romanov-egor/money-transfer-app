@@ -7,6 +7,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main {
@@ -26,7 +27,7 @@ public class Main {
         Context context = tomcat.addWebapp(CONTEXT_PATH, APP_BASE);
 
         tomcat.addServlet(context, "mtsa-servlet",
-                new ServletContainer(new ResourceConfig(new Configuration().getClasses())));
+                new ServletContainer(new ResourceConfig(new WebAppConfig().getClasses())));
         context.addServletMappingDecoded("/*", "mtsa-servlet");
 
         try {
@@ -34,7 +35,7 @@ public class Main {
             log.info(String.format("Tomcat started at port %d", port));
             tomcat.getServer().await();
         } catch (LifecycleException e) {
-            log.severe(String.format("Failed to start Tomcat at port %d", port));
+            log.log(Level.SEVERE, String.format("Failed to start Tomcat at port %d", port), e);
         } finally {
             tomcat.destroy();
         }

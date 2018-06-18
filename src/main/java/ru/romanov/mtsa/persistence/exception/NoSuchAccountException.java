@@ -5,7 +5,7 @@ package ru.romanov.mtsa.persistence.exception;
  *
  * @author Egor Romanov
  */
-public class NoSuchAccountException extends RuntimeException {
+public class NoSuchAccountException extends Exception {
 
     public NoSuchAccountException() {
     }

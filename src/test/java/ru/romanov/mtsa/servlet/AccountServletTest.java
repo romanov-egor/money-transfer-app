@@ -6,8 +6,9 @@ import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Test;
 import ru.romanov.mtsa.persistence.entity.Account;
+import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mtsa.persistence.repository.AccountRepository;
-import ru.romanov.mtsa.servlet.model.AccountJson;
+import ru.romanov.mtsa.servlet.model.AccountModel;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
@@ -28,19 +29,20 @@ public class AccountServletTest extends JerseyTest {
 
     private void populateDatabaseWithTestData() {
         AccountRepository accountRepository = new AccountRepository();
+        try {
+            Account account = new Account();
+            account.setHolderName("a");
+            account.setBalance(11.0);
+            accountRepository.create(account);
 
-        Account account = new Account();
-        account.setHolderName("a");
-        account.setBalance(11.0);
-        accountRepository.create(account);
+            account.setHolderName("b");
+            account.setBalance(22.0);
+            accountRepository.create(account);
 
-        account.setHolderName("b");
-        account.setBalance(22.0);
-        accountRepository.create(account);
-
-        account.setHolderName("c");
-        account.setBalance(33.0);
-        accountRepository.create(account);
+            account.setHolderName("c");
+            account.setBalance(33.0);
+            accountRepository.create(account);
+        } catch (ApplicationPersistenceException ignore) {}
     }
 
     //-----------------------------------
@@ -50,9 +52,9 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void createAccount_whenHolderNameIsNull_thenBadRequest() {
         //Given
-        AccountJson account = new AccountJson();
+        AccountModel account = new AccountModel();
         account.setBalance(0.0);
-        Entity<AccountJson> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().post(accountEntity);
@@ -64,10 +66,10 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void createAccount_whenBalanceIsNegative_thenBadRequest() {
         //Given
-        AccountJson account = new AccountJson();
+        AccountModel account = new AccountModel();
         account.setHolderName("");
         account.setBalance(-1.0);
-        Entity<AccountJson> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().post(accountEntity);
@@ -91,10 +93,10 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void updateAccount_whenHolderNameIsNull_thenBadRequest() {
         //Given
-        AccountJson account = new AccountJson();
+        AccountModel account = new AccountModel();
         account.setId(1);
         account.setBalance(0.0);
-        Entity<AccountJson> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().put(accountEntity);
@@ -106,11 +108,11 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void updateAccount_whenBalanceIsNegative_thenBadRequest() {
         //Given
-        AccountJson account = new AccountJson();
+        AccountModel account = new AccountModel();
         account.setId(1);
         account.setHolderName("");
         account.setBalance(-1.0);
-        Entity<AccountJson> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().put(accountEntity);
@@ -122,11 +124,11 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void updateAccount_whenAccountDoesNotExist_thenNotFound() {
         //Given
-        AccountJson account = new AccountJson();
+        AccountModel account = new AccountModel();
         account.setId(0);
         account.setHolderName("");
         account.setBalance(0.0);
-        Entity<AccountJson> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().put(accountEntity);
@@ -176,18 +178,18 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void getAccount_whenAccountExists_thenOkAndAccountJson() {
         //Given
-        AccountJson expectedAccountJson = new AccountJson();
-        expectedAccountJson.setId(1);
-        expectedAccountJson.setHolderName("a");
-        expectedAccountJson.setBalance(11.0);
+        AccountModel expectedAccountModel = new AccountModel();
+        expectedAccountModel.setId(1);
+        expectedAccountModel.setHolderName("a");
+        expectedAccountModel.setBalance(11.0);
 
         //When
         Response response = target("/account/1").request().get();
 
         //Then
-        AccountJson receivedAccountJson = response.readEntity(AccountJson.class);
+        AccountModel receivedAccountModel = response.readEntity(AccountModel.class);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertTrue(expectedAccountJson.equals(receivedAccountJson));
+        assertTrue(expectedAccountModel.equals(receivedAccountModel));
     }
 
     /**
@@ -197,20 +199,20 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void createAccount_whenCreateAccountSucceed_thenOkAndAccountJson() {
         //Given
-        AccountJson accountToCreate = new AccountJson();
+        AccountModel accountToCreate = new AccountModel();
         accountToCreate.setHolderName("d");
         accountToCreate.setBalance(44.0);
-        Entity<AccountJson> accountEntity = Entity.entity(accountToCreate, MediaType.APPLICATION_JSON);
+        Entity<AccountModel> accountEntity = Entity.entity(accountToCreate, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().post(accountEntity);
 
         //Then
-        AccountJson receivedAccountJson = response.readEntity(AccountJson.class);
+        AccountModel receivedAccountModel = response.readEntity(AccountModel.class);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertTrue(receivedAccountJson.getId() > 0);
-        assertEquals(accountToCreate.getHolderName(), receivedAccountJson.getHolderName());
-        assertEquals(accountToCreate.getBalance(), receivedAccountJson.getBalance(), 0);
+        assertTrue(receivedAccountModel.getId() > 0);
+        assertEquals(accountToCreate.getHolderName(), receivedAccountModel.getHolderName());
+        assertEquals(accountToCreate.getBalance(), receivedAccountModel.getBalance(), 0);
     }
 
     /**
@@ -220,19 +222,19 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void updateAccount_whenUpdateAccountSucceed_thenOkAndAccountJson() {
         //Given
-        AccountJson accountToUpdate = new AccountJson();
-        accountToUpdate.setId(3);
-        accountToUpdate.setHolderName("c_u");
-        accountToUpdate.setBalance(34.0);
-        Entity<AccountJson> accountEntity = Entity.entity(accountToUpdate, MediaType.APPLICATION_JSON);
+        AccountModel accountToUpdate = new AccountModel();
+        accountToUpdate.setId(2);
+        accountToUpdate.setHolderName("b_u");
+        accountToUpdate.setBalance(23.0);
+        Entity<AccountModel> accountEntity = Entity.entity(accountToUpdate, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().put(accountEntity);
 
         //Then
-        AccountJson receivedAccountJson = response.readEntity(AccountJson.class);
+        AccountModel receivedAccountModel = response.readEntity(AccountModel.class);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertTrue(accountToUpdate.equals(receivedAccountJson));
+        assertTrue(accountToUpdate.equals(receivedAccountModel));
     }
 
     /**
@@ -242,7 +244,7 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void deleteAccount_whenDeleteAccountSucceed_thenOk() {
         //When
-        Response response = target("/account/2").request().delete();
+        Response response = target("/account/3").request().delete();
 
         //Then
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());

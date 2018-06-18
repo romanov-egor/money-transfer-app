@@ -1,6 +1,6 @@
 package ru.romanov.mtsa.servlet;
 
-import ru.romanov.mtsa.servlet.model.ErrorJson;
+import ru.romanov.mtsa.servlet.model.ErrorResponse;
 
 import javax.ws.rs.core.Response;
 
@@ -24,7 +24,7 @@ public class AbstractServlet {
     }
 
     protected Response buildErrorResponse(Response.Status status, String message) {
-        ErrorJson errorJson = new ErrorJson(status.getStatusCode(), message);
-        return Response.status(status).entity(errorJson).build();
+        ErrorResponse errorResponse = new ErrorResponse(status.getStatusCode(), message);
+        return Response.status(status).entity(errorResponse).build();
     }
 }

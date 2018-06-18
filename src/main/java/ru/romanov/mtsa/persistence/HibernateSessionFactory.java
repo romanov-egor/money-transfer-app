@@ -1,11 +1,14 @@
 package ru.romanov.mtsa.persistence;
 
+import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
 import ru.romanov.mtsa.persistence.entity.Account;
 
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class wraps {@link SessionFactory}, performs build and close operations
@@ -13,6 +16,8 @@ import java.util.Properties;
  * @author Egor Romanov
  */
 public class HibernateSessionFactory {
+
+    public static final Logger log = Logger.getLogger(HibernateSessionFactory.class.getName());
 
     private static volatile SessionFactory sessionFactory;
 
@@ -29,7 +34,11 @@ public class HibernateSessionFactory {
 
     public static void closeSessionFactory() {
         if (sessionFactory != null) {
-            sessionFactory.close();
+            try {
+                sessionFactory.close();
+            } catch (HibernateException ignore) {
+                log.log(Level.SEVERE, "Unable to close SessionFactory", ignore);
+            }
         }
     }
 

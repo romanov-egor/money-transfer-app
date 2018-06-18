@@ -1,11 +1,9 @@
 package ru.romanov.mtsa.servlet.model;
 
 /**
- * Account presentation model
- *
  * @author Egor Romanov
  */
-public class AccountJson {
+public class AccountModel {
 
     private long id;
 
@@ -48,7 +46,7 @@ public class AccountJson {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        AccountJson other = (AccountJson) obj;
+        AccountModel other = (AccountModel) obj;
         if (id != other.id) {
             return false;
         }

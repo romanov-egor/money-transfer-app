@@ -1,58 +1,70 @@
 package ru.romanov.mtsa.service;
 
+import ru.romanov.mtsa.service.converter.ModelConverter;
 import ru.romanov.mtsa.persistence.entity.Account;
 import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
-import ru.romanov.mtsa.servlet.model.AccountJson;
+import ru.romanov.mtsa.persistence.repository.AccountRepository;
+import ru.romanov.mtsa.servlet.model.AccountModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * Service that provides business logic of Account CRUD operations. In current case it is only needed for scalability.
- *
- * @author Egor Romanov
- */
-public interface AccountService {
+public class AccountService {
+
+    private AccountRepository accountRepository = new AccountRepository();
 
     /**
-     * Gets Account by identifier as presentation (json) model
-     * @param id identifier of Account entity
-     * @return Account presentation (json) model
+     * Gets Account by identifier as {@link AccountModel}
+     * @param id Account identifier
+     * @return
      * @throws NoSuchAccountException if no Account with such identifier present
      * @throws ApplicationPersistenceException if problems with database connection
      */
-    AccountJson getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException;
+    public AccountModel getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException {
+        return ModelConverter.toModel(accountRepository.get(id));
+    }
 
     /**
-     * Gets all Accounts as {@link List} of presentation (json) models
-     * @return {@link List} of Account presentation (json) models
+     * Gets all Accounts as {@link List} of {@link AccountModel}
+     * @return
      * @throws ApplicationPersistenceException if problems with database connection
      */
-    List<AccountJson> getAccounts() throws ApplicationPersistenceException;
+    public List<AccountModel> getAccounts() throws ApplicationPersistenceException {
+        return accountRepository.getAll().stream().map(ModelConverter::toModel).collect(Collectors.toList());
+    }
 
     /**
-     * Creates Account from presentation (json) model
-     * @param accountJson json model with incoming parameters. {@link AccountJson#id} will be ignored
-     * @return {@link AccountJson} that represents created {@link Account} entity (including it's identifier)
+     * Creates Account from {@link AccountModel}
+     * @param accountModel Model with incoming parameters. {@link AccountModel#id} will be ignored
+     * @return {@link AccountModel} that represents created {@link Account} (including it's identifier)
      * @throws ApplicationPersistenceException if problems with database connection
      */
-    AccountJson createAccount(AccountJson accountJson) throws ApplicationPersistenceException;
+    public AccountModel createAccount(AccountModel accountModel) throws ApplicationPersistenceException {
+        Account createdAccount = accountRepository.create(ModelConverter.toEntity(accountModel));
+        return ModelConverter.toModel(createdAccount);
+    }
 
     /**
-     * Updates Account from presentation (json) model
-     * @param accountJson json model with incoming parameters. {@link AccountJson#id} will be used to find entity to
-     *                    update
-     * @return {@link AccountJson} that represents updated {@link Account} entity
-     * @throws NoSuchAccountException if no Account with {@link AccountJson#id} present
+     * Updates Account from {@link AccountModel}
+     * @param accountModel Model with incoming parameters. {@link AccountModel#id} is used to find {@link Account}
+     * to update
+     * @return {@link AccountModel} that represents updated {@link Account}
+     * @throws NoSuchAccountException if no Account with {@link AccountModel#id} present
      * @throws ApplicationPersistenceException if problems with database connection
      */
-    void updateAccount(AccountJson accountJson) throws NoSuchAccountException, ApplicationPersistenceException;
+    public void updateAccount(AccountModel accountModel) throws NoSuchAccountException,
+            ApplicationPersistenceException {
+        accountRepository.update(ModelConverter.toEntity(accountModel));
+    }
 
     /**
      * Deletes Account by identifier
-     * @param accountId identifier of Account entity
+     * @param accountId Account identifier
      * @throws NoSuchAccountException if no Account with such identifier present
      * @throws ApplicationPersistenceException if problems with database connection
      */
-    void deleteAccount(long accountId) throws NoSuchAccountException, ApplicationPersistenceException;
+    public void deleteAccount(long accountId) throws NoSuchAccountException, ApplicationPersistenceException {
+        accountRepository.delete(accountId);
+    }
 }

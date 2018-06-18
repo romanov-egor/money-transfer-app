@@ -1,19 +1,19 @@
 package ru.romanov.mtsa.servlet.model;
 
 /**
- * Common error presentation model
+ * Common error model
  *
  * @author Egor Romanov
  */
-public class ErrorJson {
+public class ErrorResponse {
 
     private int errorCode;
 
     private String message;
 
-    public ErrorJson() {};
+    public ErrorResponse() {};
 
-    public ErrorJson(int errorCode, String message) {
+    public ErrorResponse(int errorCode, String message) {
         this.errorCode = errorCode;
         this.message = message;
     }

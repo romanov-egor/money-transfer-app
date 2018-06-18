@@ -8,7 +8,7 @@ import org.hibernate.Session;
  *
  * @author Egor Romanov
  */
-public class ApplicationPersistenceException extends  RuntimeException {
+public class ApplicationPersistenceException extends Exception {
 
     public ApplicationPersistenceException() {
     }

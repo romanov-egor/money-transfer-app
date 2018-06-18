@@ -6,8 +6,9 @@ import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
 import org.junit.Test;
 import ru.romanov.mtsa.persistence.entity.Account;
+import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mtsa.persistence.repository.AccountRepository;
-import ru.romanov.mtsa.servlet.model.TransferJson;
+import ru.romanov.mtsa.servlet.model.TransferModel;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
@@ -28,18 +29,20 @@ public class TransferServletTest extends JerseyTest {
     private void populateDatabaseWithTestData() {
         AccountRepository accountRepository = new AccountRepository();
 
-        Account account = new Account();
-        account.setHolderName("a");
-        account.setBalance(11.0);
-        accountRepository.create(account);
+        try {
+            Account account = new Account();
+            account.setHolderName("a");
+            account.setBalance(11.0);
+            accountRepository.create(account);
 
-        account.setHolderName("b");
-        account.setBalance(22.0);
-        accountRepository.create(account);
+            account.setHolderName("b");
+            account.setBalance(22.0);
+            accountRepository.create(account);
 
-        account.setHolderName("c");
-        account.setBalance(33.0);
-        accountRepository.create(account);
+            account.setHolderName("c");
+            account.setBalance(33.0);
+            accountRepository.create(account);
+        } catch (ApplicationPersistenceException ignore) {}
     }
 
     //-----------------------------------
@@ -49,11 +52,11 @@ public class TransferServletTest extends JerseyTest {
     @Test
     public void transfer_whenSenderIdEqualsRecipientId_thenBadRequest() {
         //Given
-        TransferJson transferJson = new TransferJson();
-        transferJson.setSenderId(1);
-        transferJson.setRecipientId(1);
-        transferJson.setTransferAmount(1.0);
-        Entity<TransferJson> transferEntity = Entity.entity(transferJson, MediaType.APPLICATION_JSON);
+        TransferModel transferModel = new TransferModel();
+        transferModel.setSenderId(1);
+        transferModel.setRecipientId(1);
+        transferModel.setTransferAmount(1.0);
+        Entity<TransferModel> transferEntity = Entity.entity(transferModel, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/transfer").request().post(transferEntity);
@@ -65,11 +68,11 @@ public class TransferServletTest extends JerseyTest {
     @Test
     public void transfer_whenSenderDoesNotExist_thenBadRequest() {
         //Given
-        TransferJson transferJson = new TransferJson();
-        transferJson.setSenderId(0);
-        transferJson.setRecipientId(1);
-        transferJson.setTransferAmount(1.0);
-        Entity<TransferJson> transferEntity = Entity.entity(transferJson, MediaType.APPLICATION_JSON);
+        TransferModel transferModel = new TransferModel();
+        transferModel.setSenderId(0);
+        transferModel.setRecipientId(1);
+        transferModel.setTransferAmount(1.0);
+        Entity<TransferModel> transferEntity = Entity.entity(transferModel, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/transfer").request().post(transferEntity);
@@ -81,11 +84,11 @@ public class TransferServletTest extends JerseyTest {
     @Test
     public void transfer_whenRecipientDoesNotExist_thenBadRequest() {
         //Given
-        TransferJson transferJson = new TransferJson();
-        transferJson.setSenderId(1);
-        transferJson.setRecipientId(0);
-        transferJson.setTransferAmount(1.0);
-        Entity<TransferJson> transferEntity = Entity.entity(transferJson, MediaType.APPLICATION_JSON);
+        TransferModel transferModel = new TransferModel();
+        transferModel.setSenderId(1);
+        transferModel.setRecipientId(0);
+        transferModel.setTransferAmount(1.0);
+        Entity<TransferModel> transferEntity = Entity.entity(transferModel, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/transfer").request().post(transferEntity);
@@ -97,11 +100,11 @@ public class TransferServletTest extends JerseyTest {
     @Test
     public void transfer_whenSenderBalanceIsLessThanTransferAmount_thenBadRequest() {
         //Given
-        TransferJson transferJson = new TransferJson();
-        transferJson.setSenderId(1);
-        transferJson.setRecipientId(2);
-        transferJson.setTransferAmount(10.0);
-        Entity<TransferJson> transferEntity = Entity.entity(transferJson, MediaType.APPLICATION_JSON);
+        TransferModel transferModel = new TransferModel();
+        transferModel.setSenderId(1);
+        transferModel.setRecipientId(2);
+        transferModel.setTransferAmount(50.0);
+        Entity<TransferModel> transferEntity = Entity.entity(transferModel, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/transfer").request().post(transferEntity);
@@ -126,5 +129,23 @@ public class TransferServletTest extends JerseyTest {
     //--- Tests of positive scenarios ---
     //-----------------------------------
 
+    /**
+     * This test based on database initialization data.
+     * @see #populateDatabaseWithTestData()
+     */
+    @Test
+    public void transfer_whenTransferSucceed_thenOk() {
+        //Given
+        TransferModel transferModel = new TransferModel();
+        transferModel.setSenderId(1);
+        transferModel.setRecipientId(2);
+        transferModel.setTransferAmount(5.0);
+        Entity<TransferModel> transferEntity = Entity.entity(transferModel, MediaType.APPLICATION_JSON);
 
+        //When
+        Response response = target("/transfer").request().post(transferEntity);
+
+        //Then
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+    }
 }

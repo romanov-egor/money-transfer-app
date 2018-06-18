@@ -3,33 +3,37 @@ package ru.romanov.mtsa.servlet;
 import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 import ru.romanov.mtsa.service.AccountService;
-import ru.romanov.mtsa.service.impl.AccountServiceImpl;
-import ru.romanov.mtsa.servlet.exception.AccountJsonValidationException;
-import ru.romanov.mtsa.servlet.model.AccountJson;
+import ru.romanov.mtsa.servlet.exception.AccountModelValidationException;
+import ru.romanov.mtsa.servlet.model.AccountModel;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Provides RESTful API for Account entity
+ * Provides RESTful API to manage Accounts
  *
  * @author Egor Romanov
  */
 @Path("/account")
 public class AccountServlet extends AbstractServlet {
 
-    private AccountService accountService = AccountServiceImpl.getInstance();
+    public static final Logger log = Logger.getLogger(AccountServlet.class.getName());
+
+    private final AccountService accountService = new AccountService();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAccounts(){
-        GenericEntity<List<AccountJson>> responseBody;
+        GenericEntity<List<AccountModel>> responseBody;
         try {
-            responseBody = new GenericEntity<List<AccountJson>>(accountService.getAccounts()) {};
+            responseBody = new GenericEntity<List<AccountModel>>(accountService.getAccounts()) {};
         } catch (ApplicationPersistenceException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
             return buildErrorResponse(Response.Status.INTERNAL_SERVER_ERROR);
         }
         return buildSuccessResponse(responseBody);
@@ -39,32 +43,34 @@ public class AccountServlet extends AbstractServlet {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAccount(@PathParam("id") String id) {
-        AccountJson accountJson;
+        AccountModel accountModel;
         try {
             long accountId = Long.parseLong(id);
-            accountJson = accountService.getAccount(accountId);
+            accountModel = accountService.getAccount(accountId);
         } catch (NumberFormatException e) {
             return buildErrorResponse(Response.Status.BAD_REQUEST, "Wrong number format in request path");
         } catch (NoSuchAccountException e) {
             return buildErrorResponse(Response.Status.NOT_FOUND, e.getMessage());
         } catch (ApplicationPersistenceException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
             return buildErrorResponse(Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        return buildSuccessResponse(accountJson);
+        return buildSuccessResponse(accountModel);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createAccount(AccountJson accountJson) {
-        AccountJson responseBody;
+    public Response createAccount(AccountModel accountModel) {
+        AccountModel responseBody;
         try {
-            validateAccountJson(accountJson);
-            responseBody = accountService.createAccount(accountJson);
-        } catch (AccountJsonValidationException e) {
+            validateAccountModel(accountModel);
+            responseBody = accountService.createAccount(accountModel);
+        } catch (AccountModelValidationException e) {
             return buildErrorResponse(Response.Status.BAD_REQUEST, e.getMessage());
         } catch (ApplicationPersistenceException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
             return buildErrorResponse(Response.Status.INTERNAL_SERVER_ERROR);
         }
 
@@ -74,19 +80,20 @@ public class AccountServlet extends AbstractServlet {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAccount(AccountJson accountJson) {
+    public Response updateAccount(AccountModel accountModel) {
         try {
-            validateAccountJson(accountJson);
-            accountService.updateAccount(accountJson);
-        } catch (AccountJsonValidationException e) {
+            validateAccountModel(accountModel);
+            accountService.updateAccount(accountModel);
+        } catch (AccountModelValidationException e) {
             return buildErrorResponse(Response.Status.BAD_REQUEST, e.getMessage());
         } catch (NoSuchAccountException e) {
             return buildErrorResponse(Response.Status.NOT_FOUND, e.getMessage());
         } catch (ApplicationPersistenceException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
             return buildErrorResponse(Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        return buildSuccessResponse(accountJson);
+        return buildSuccessResponse(accountModel);
     }
 
     @DELETE
@@ -101,17 +108,18 @@ public class AccountServlet extends AbstractServlet {
         } catch (NoSuchAccountException e) {
             return buildErrorResponse(Response.Status.NOT_FOUND, e.getMessage());
         } catch (ApplicationPersistenceException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
             return buildErrorResponse(Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return buildSuccessResponse();
     }
 
-    private void validateAccountJson(AccountJson accountJson) throws AccountJsonValidationException {
-        if (null == accountJson.getHolderName()) {
-            throw new AccountJsonValidationException("Account holder name can not be null");
-        } else if (accountJson.getBalance() < 0.0) {
-            throw new AccountJsonValidationException("Account can not have negative balance");
+    private void validateAccountModel(AccountModel accountModel) throws AccountModelValidationException {
+        if (null == accountModel.getHolderName()) {
+            throw new AccountModelValidationException("Account holder name can not be null");
+        } else if (accountModel.getBalance() < 0.0) {
+            throw new AccountModelValidationException("Account can not have negative balance");
         }
     }
 }
