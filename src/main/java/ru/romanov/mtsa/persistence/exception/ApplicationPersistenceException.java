@@ -1,5 +1,13 @@
 package ru.romanov.mtsa.persistence.exception;
 
+import org.hibernate.Session;
+
+/**
+ * This exception should be thrown if unable to create {@link Session} or repository class unable to perform some
+ * operation (create, get, update, delete, etc.)
+ *
+ * @author Egor Romanov
+ */
 public class ApplicationPersistenceException extends  RuntimeException {
 
     public ApplicationPersistenceException() {

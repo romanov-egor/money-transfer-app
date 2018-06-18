@@ -1,6 +1,11 @@
 package ru.romanov.mtsa.servlet.model;
 
-public class TransferJsonModel {
+/**
+ * Transfer presentation model to represent money transfer between accounts
+ *
+ * @author Egor Romanov
+ */
+public class TransferJson {
 
     private long senderId;
 

@@ -2,6 +2,12 @@ package ru.romanov.mtsa.persistence.entity;
 
 import javax.persistence.*;
 
+
+/**
+ * Account JPA entity
+ *
+ * @author Egor Romanov
+ */
 @Entity
 @Table
 public class Account {

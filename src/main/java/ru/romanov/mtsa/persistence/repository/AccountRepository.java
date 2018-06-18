@@ -10,42 +10,56 @@ import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 
 import java.util.List;
 
+/**
+ * Repository class to perform base persistence operation on {@link Account} entity
+ *
+ * @author Egor Romanov
+ */
 public class AccountRepository {
 
     public Account get(long id) throws NoSuchAccountException, ApplicationPersistenceException {
-        Session session = openSession();
-        Account account = session.get(Account.class, id);
-
-        if (null == account) {
-            throw new NoSuchAccountException("Unable to get account with id: " + id);
+        Account account;
+        try {
+            Session session = HibernateSessionFactory.getSessionFactory().openSession();
+            account = session.get(Account.class, id);
+            session.close();
+        } catch (HibernateException e) {
+            throw new ApplicationPersistenceException("Problems while executing #get() method. Check database connection.");
         }
 
-        closeSession(session);
+        if (null == account) {
+            throw new NoSuchAccountException("No account exists with id: " + id);
+        }
+
         return account;
     }
 
     public List<Account> getAll() throws ApplicationPersistenceException {
-        Session session = openSession();
-
-        List<Account> accounts = session.createQuery("from Account").list();
-
-        closeSession(session);
+        List<Account> accounts;
+        try {
+            Session session = HibernateSessionFactory.getSessionFactory().openSession();
+            accounts = session.createQuery("from Account").list();
+            session.close();
+        } catch (HibernateException e) {
+            throw new ApplicationPersistenceException("Problems while executing #getAll() method. Check database connection.");
+        }
 
         return accounts;
     }
 
     public Account create(Account account) throws ApplicationPersistenceException{
-        Session session = openSession();
-        Transaction transaction = session.beginTransaction();
+        Long id;
+        try {
+            Session session = HibernateSessionFactory.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
 
-        Long id = (Long) session.save(account);
+            id = (Long) session.save(account);
 
-        if (null == id) {
-            throw new ApplicationPersistenceException("Unable to create new account");
+            transaction.commit();
+            session.close();
+        } catch (HibernateException e) {
+            throw new ApplicationPersistenceException("Problems while executing #create() method. Check database connection.");
         }
-
-        transaction.commit();
-        closeSession(session);
 
         account.setId(id);
         return account;
@@ -55,40 +69,33 @@ public class AccountRepository {
         //Existence check
         get(account.getId());
 
-        Session session = openSession();
-        Transaction transaction = session.beginTransaction();
-
-        session.update(account);
-
-        transaction.commit();
-        closeSession(session);
-    }
-
-    public void delete(long id) throws NoSuchAccountException, ApplicationPersistenceException{
-        Account account = get(id);
-
-        Session session = openSession();
-        Transaction transaction = session.beginTransaction();
-
-        session.delete(account);
-
-        transaction.commit();
-        closeSession(session);
-    }
-
-    private Session openSession() throws ApplicationPersistenceException {
         try {
-            return HibernateSessionFactory.getSessionFactory().openSession();
+            Session session = HibernateSessionFactory.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
+
+            session.update(account);
+
+            transaction.commit();
+            session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Unable to open hibernate session", e);
+            throw new ApplicationPersistenceException("Problems while executing #update() method. Check database connection.");
         }
     }
 
-    private void closeSession(Session session) {
+    public void delete(long id) throws NoSuchAccountException, ApplicationPersistenceException{
+        //Existence check
+        Account account = get(id);
+
         try {
+            Session session = HibernateSessionFactory.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
+
+            session.delete(account);
+
+            transaction.commit();
             session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Unable to close hibernate session", e);
+            throw new ApplicationPersistenceException("Problems while executing #delete() method. Check database connection.");
         }
     }
 }

@@ -7,6 +7,11 @@ import ru.romanov.mtsa.persistence.entity.Account;
 
 import java.util.Properties;
 
+/**
+ * This class wraps {@link SessionFactory}, performs build and close operations
+ *
+ * @author Egor Romanov
+ */
 public class HibernateSessionFactory {
 
     private static volatile SessionFactory sessionFactory;

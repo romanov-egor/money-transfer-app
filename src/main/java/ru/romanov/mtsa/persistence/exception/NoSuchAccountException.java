@@ -1,5 +1,10 @@
 package ru.romanov.mtsa.persistence.exception;
 
+/**
+ * This exception should be thrown if there is no Account with given identifier in database
+ *
+ * @author Egor Romanov
+ */
 public class NoSuchAccountException extends RuntimeException {
 
     public NoSuchAccountException() {

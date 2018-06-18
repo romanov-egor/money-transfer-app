@@ -8,6 +8,11 @@ import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Web application configuration
+ *
+ * @author Egor Romanov
+ */
 public class Configuration extends Application{
 
     public Configuration( ) {}

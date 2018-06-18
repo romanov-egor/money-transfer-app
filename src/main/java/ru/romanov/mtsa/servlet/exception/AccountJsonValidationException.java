@@ -1,5 +1,12 @@
 package ru.romanov.mtsa.servlet.exception;
 
+import ru.romanov.mtsa.servlet.model.AccountJson;
+
+/**
+ * This exception should be thrown if received {@link AccountJson} model has incorrect parameters
+ *
+ * @author Egor Romanov
+ */
 public class AccountJsonValidationException extends RuntimeException {
 
     public AccountJsonValidationException() {

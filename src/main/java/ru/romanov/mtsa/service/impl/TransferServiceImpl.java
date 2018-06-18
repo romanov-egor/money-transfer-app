@@ -6,7 +6,7 @@ import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 import ru.romanov.mtsa.service.exception.NotEnoughMoneyForTransferException;
 import ru.romanov.mtsa.persistence.repository.AccountRepository;
 import ru.romanov.mtsa.service.TransferService;
-import ru.romanov.mtsa.servlet.model.TransferJsonModel;
+import ru.romanov.mtsa.servlet.model.TransferJson;
 
 public class TransferServiceImpl implements TransferService {
 
@@ -26,23 +26,23 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Override
-    public void transfer(TransferJsonModel transferJsonModel) throws NoSuchAccountException,
+    public void transfer(TransferJson transferJson) throws NoSuchAccountException,
             NotEnoughMoneyForTransferException, ApplicationPersistenceException {
         Account sender;
         Account recipient;
         try {
-            sender = accountRepository.get(transferJsonModel.getSenderId());
+            sender = accountRepository.get(transferJson.getSenderId());
         } catch (NoSuchAccountException e) {
-            throw new NoSuchAccountException("Unable to get sender account with id: " + transferJsonModel.getSenderId());
+            throw new NoSuchAccountException("Unable to get sender account with id: " + transferJson.getSenderId());
         }
 
         try {
-            recipient = accountRepository.get(transferJsonModel.getRecipientId());
+            recipient = accountRepository.get(transferJson.getRecipientId());
         } catch (NoSuchAccountException e) {
-            throw new NoSuchAccountException("Unable to get recipient account with id: " + transferJsonModel.getRecipientId());
+            throw new NoSuchAccountException("Unable to get recipient account with id: " + transferJson.getRecipientId());
         }
 
-        double amount = transferJsonModel.getTransferAmount();
+        double amount = transferJson.getTransferAmount();
         if (sender.getBalance() - amount < 0.0) {
             throw new NotEnoughMoneyForTransferException("Sender does not have enough money to perform transfer operation");
         }

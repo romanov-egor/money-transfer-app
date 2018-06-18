@@ -1,5 +1,12 @@
 package ru.romanov.mtsa.servlet.exception;
 
+import ru.romanov.mtsa.servlet.model.TransferJson;
+
+/**
+ * This exception should be thrown if received {@link TransferJson} model has incorrect parameters
+ *
+ * @author Egor Romanov
+ */
 public class TransferJsonValidationException extends RuntimeException {
 
     public TransferJsonValidationException() {

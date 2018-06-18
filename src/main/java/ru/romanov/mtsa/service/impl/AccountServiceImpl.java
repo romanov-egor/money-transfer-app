@@ -6,7 +6,7 @@ import ru.romanov.mtsa.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mtsa.persistence.exception.NoSuchAccountException;
 import ru.romanov.mtsa.persistence.repository.AccountRepository;
 import ru.romanov.mtsa.service.AccountService;
-import ru.romanov.mtsa.servlet.model.AccountJsonModel;
+import ru.romanov.mtsa.servlet.model.AccountJson;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,25 +29,25 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountJsonModel getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException {
+    public AccountJson getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException {
         return ModelConverter.toJsonModel(accountRepository.get(id));
     }
 
     @Override
-    public List<AccountJsonModel> getAccounts() throws ApplicationPersistenceException {
+    public List<AccountJson> getAccounts() throws ApplicationPersistenceException {
         return accountRepository.getAll().stream().map(ModelConverter::toJsonModel).collect(Collectors.toList());
     }
 
     @Override
-    public AccountJsonModel createAccount(AccountJsonModel accountJsonModel) throws ApplicationPersistenceException {
-        Account createdAccount = accountRepository.create(ModelConverter.toPersistenceModel(accountJsonModel));
+    public AccountJson createAccount(AccountJson accountJson) throws ApplicationPersistenceException {
+        Account createdAccount = accountRepository.create(ModelConverter.toPersistenceModel(accountJson));
         return ModelConverter.toJsonModel(createdAccount);
     }
 
     @Override
-    public void updateAccount(AccountJsonModel accountJsonModel) throws NoSuchAccountException,
+    public void updateAccount(AccountJson accountJson) throws NoSuchAccountException,
             ApplicationPersistenceException {
-        accountRepository.update(ModelConverter.toPersistenceModel(accountJsonModel));
+        accountRepository.update(ModelConverter.toPersistenceModel(accountJson));
     }
 
     @Override
