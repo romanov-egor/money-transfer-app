@@ -115,7 +115,7 @@ public class AccountServletTest extends JerseyTest {
     }
 
     @Test
-    public void updateAccount_whenAccountDoesNotExists_thenNotFound() {
+    public void updateAccount_whenAccountDoesNotExist_thenNotFound() {
         //Given
         Account account = new Account();
         account.setId(0);
@@ -144,7 +144,7 @@ public class AccountServletTest extends JerseyTest {
     }
 
     @Test
-    public void deleteAccount_whenAccountDoesNotExists_thenNotFound() {
+    public void deleteAccount_whenAccountDoesNotExist_thenNotFound() {
         //When
         Response response = target("/account/0").request().delete();
 
@@ -153,7 +153,7 @@ public class AccountServletTest extends JerseyTest {
     }
 
     @Test
-    public void getAccount_whenAccountDoesNotExists_thenNotFound() {
+    public void getAccount_whenAccountDoesNotExist_thenNotFound() {
         //When
         Response response = target("/account/0").request().get();
 

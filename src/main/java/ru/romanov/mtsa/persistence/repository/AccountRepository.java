@@ -17,7 +17,7 @@ public class AccountRepository {
         Account account = session.get(Account.class, id);
 
         if (null == account) {
-            throw new NoSuchAccountException();
+            throw new NoSuchAccountException("Unable to get account with id: " + id);
         }
 
         closeSession(session);
