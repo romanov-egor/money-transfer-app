@@ -2,6 +2,7 @@ package ru.romanov.mtsa;
 
 import org.glassfish.jersey.jackson.JacksonFeature;
 import ru.romanov.mtsa.servlet.AccountServlet;
+import ru.romanov.mtsa.servlet.TransferServlet;
 
 import javax.ws.rs.core.Application;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ public class Configuration extends Application{
         final Set<Class<?>> classes = new HashSet<Class<?>>( );
         classes.add(JacksonFeature.class);
         classes.add(AccountServlet.class);
+        classes.add(TransferServlet.class);
         return classes;
     }
 }
