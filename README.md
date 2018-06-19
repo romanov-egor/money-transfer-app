@@ -1,5 +1,5 @@
 # Money Transfer App
-This project demonstrates simple RESTful API to manage accounts and transfer money between them.
+This project provides simple RESTful API to manage accounts and transfer money between them.
 
 ## Technology stack
 
@@ -15,13 +15,13 @@ To build and run this application you will need:
 * JDK 1.8 or higher
 * Apache Maven 3.5.0 or higher
 
-Don't forget to set JAVA_HOME and M2_HOME environment variables and add them to PATH.
+Don't forget to set `JAVA_HOME` and `M2_HOME` environment variables and add them to `PATH`.
 
 Clone project with
 ```
     git clone https://github.com/romanov-egor/money-transfer-app.git
 ```
-or download zip file and extract in any folder.
+or download zip file and extract to any folder.
 
 ### To build application
 Open command line, go to project folder and execute
@@ -34,7 +34,7 @@ Build application, go to `target` folder
 ```
     cd target
 ```
-And execute jar-with-dependencies file with Java
+And execute `jar-with-dependencies` file with Java
 ```
     java -jar money-transfer-app-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
@@ -49,7 +49,7 @@ Open command line, go to project folder and execute
 Description format:
 ```
     REQUEST_METHOD Path
-    JSON (optional)
+    JSON (if required)
 ```
 
 Get all accounts:
