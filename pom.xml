@@ -5,22 +5,25 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ru.romanov</groupId>
-    <artifactId>money-transfer-simple-app</artifactId>
+    <artifactId>money-transfer-app</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <name>${project.groupId} - ${project.artifactId}</name>
+    <packaging>jar</packaging>
+    <description>
+        Project to demonstrate implementation of simple RESTful API. Provides functionality of account management and
+        allows transfer money between accounts.
+    </description>
 
     <properties>
         <tomcat.version>8.5.31</tomcat.version>
         <jersey.version>2.25</jersey.version>
+        <java.version>1.8</java.version>
+        <hibernate.version>5.3.1.Final</hibernate.version>
+        <hsqldb.version>2.4.1</hsqldb.version>
+        <junit.version>4.12</junit.version>
     </properties>
 
     <build>
-        <finalName>money-transfer-simple-app</finalName>
-        <resources>
-            <resource>
-                <directory>src/main/webapp</directory>
-                <targetPath>META-INF/resources</targetPath>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -28,8 +31,8 @@
                 <version>2.3.2</version>
                 <inherited>true</inherited>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -39,7 +42,7 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                    <finalName>money-transfer-simple-app-${project.version}</finalName>
+                    <finalName>money-transfer-app-${project.version}</finalName>
                     <archive>
                         <manifest>
                             <mainClass>ru.romanov.mtsa.Main</mainClass>
@@ -114,12 +117,12 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>5.3.1.Final</version>
+            <version>${hibernate.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.4.1</version>
+            <version>${hsqldb.version}</version>
         </dependency>
 
         <dependency>
@@ -137,7 +140,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
