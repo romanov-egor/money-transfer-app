@@ -4,10 +4,12 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
-import org.junit.Test;
+import org.junit.*;
+import ru.romanov.mta.persistence.HibernateSessionFactory;
 import ru.romanov.mta.persistence.entity.Account;
 import ru.romanov.mta.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mta.persistence.repository.AccountRepository;
+import ru.romanov.mta.service.TransferService;
 import ru.romanov.mta.servlet.model.TransferModel;
 
 import javax.ws.rs.client.Entity;
@@ -19,14 +21,12 @@ import static org.junit.Assert.assertEquals;
 
 public class TransferServletTest extends JerseyTest {
 
-    @Override
-    protected Application configure() {
+    @BeforeClass
+    public static void beforeClass() {
         populateDatabaseWithTestData();
-        forceSet(TestProperties.CONTAINER_PORT, "0");
-        return new ResourceConfig(TransferServlet.class, JacksonFeature.class);
     }
 
-    private void populateDatabaseWithTestData() {
+    private static void populateDatabaseWithTestData() {
         AccountRepository accountRepository = new AccountRepository();
 
         try {
@@ -43,6 +43,22 @@ public class TransferServletTest extends JerseyTest {
             account.setBalance(33.0);
             accountRepository.create(account);
         } catch (ApplicationPersistenceException ignore) {}
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        try {
+            System.out.println(new AccountRepository().getAll());
+        } catch (ApplicationPersistenceException e) {
+
+        }
+        HibernateSessionFactory.closeSessionFactory();
+    }
+
+    @Override
+    protected Application configure() {
+        forceSet(TestProperties.CONTAINER_PORT, "0");
+        return new ResourceConfig(TransferServlet.class, JacksonFeature.class);
     }
 
     //-----------------------------------

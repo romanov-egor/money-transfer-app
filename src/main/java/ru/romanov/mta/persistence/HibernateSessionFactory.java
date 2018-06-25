@@ -36,10 +36,11 @@ public class HibernateSessionFactory {
         if (sessionFactory != null) {
             try {
                 sessionFactory.close();
-            } catch (HibernateException ignore) {
-                log.log(Level.SEVERE, "Unable to close SessionFactory", ignore);
+            } catch (HibernateException e) {
+                log.log(Level.SEVERE, "Unable to close SessionFactory", e);
             }
         }
+        sessionFactory = null;
     }
 
     private static SessionFactory initializeSessionFactory() {

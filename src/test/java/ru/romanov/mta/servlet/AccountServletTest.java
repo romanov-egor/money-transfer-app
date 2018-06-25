@@ -4,7 +4,8 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.TestProperties;
-import org.junit.Test;
+import org.junit.*;
+import ru.romanov.mta.persistence.HibernateSessionFactory;
 import ru.romanov.mta.persistence.entity.Account;
 import ru.romanov.mta.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mta.persistence.repository.AccountRepository;
@@ -20,14 +21,28 @@ import static org.junit.Assert.assertTrue;
 
 public class AccountServletTest extends JerseyTest {
 
+    @BeforeClass
+    public static void beforeClass() {
+        populateDatabaseWithTestData();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        try {
+            System.out.println(new AccountRepository().getAll());
+        } catch (ApplicationPersistenceException e) {
+
+        }
+        HibernateSessionFactory.closeSessionFactory();
+    }
+
     @Override
     protected Application configure() {
-        populateDatabaseWithTestData();
         forceSet(TestProperties.CONTAINER_PORT, "0");
         return new ResourceConfig(AccountServlet.class, JacksonFeature.class);
     }
 
-    private void populateDatabaseWithTestData() {
+    private static void populateDatabaseWithTestData() {
         AccountRepository accountRepository = new AccountRepository();
         try {
             Account account = new Account();
