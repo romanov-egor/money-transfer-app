@@ -50,11 +50,6 @@ public class TransferServiceTest extends JerseyTest {
 
     @AfterClass
     public static void afterClass() {
-        try {
-            System.out.println(new AccountRepository().getAll());
-        } catch (ApplicationPersistenceException e) {
-
-        }
         HibernateSessionFactory.closeSessionFactory();
     }
 

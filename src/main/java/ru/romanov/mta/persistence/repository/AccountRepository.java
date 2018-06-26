@@ -24,7 +24,7 @@ public class AccountRepository {
             account = session.get(Account.class, id);
             session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Problems while executing #get() method. Check database connection.");
+            throw new ApplicationPersistenceException("Problems while executing #get() method. Check database connection.", e);
         }
 
         if (null == account) {
@@ -41,7 +41,7 @@ public class AccountRepository {
             accounts = session.createQuery("from Account").list();
             session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Problems while executing #getAll() method. Check database connection.");
+            throw new ApplicationPersistenceException("Problems while executing #getAll() method. Check database connection.", e);
         }
 
         return accounts;
@@ -58,7 +58,7 @@ public class AccountRepository {
             transaction.commit();
             session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Problems while executing #create() method. Check database connection.");
+            throw new ApplicationPersistenceException("Problems while executing #create() method. Check database connection.", e);
         }
 
         account.setId(id);
@@ -66,36 +66,43 @@ public class AccountRepository {
     }
 
     public void update(Account account) throws NoSuchAccountException, ApplicationPersistenceException {
-        //Existence check
-        get(account.getId());
-
         try {
             Session session = HibernateSessionFactory.getSessionFactory().openSession();
             Transaction transaction = session.beginTransaction();
+
+            //Existence check
+            Account check = session.get(Account.class, account.getId());
+            if (check == null) {
+                throw new NoSuchAccountException("No account exists with id: " + account.getId());
+            } else {
+                session.evict(check);
+            }
 
             session.update(account);
 
             transaction.commit();
             session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Problems while executing #update() method. Check database connection.");
+            throw new ApplicationPersistenceException("Problems while executing #update() method. Check database connection.", e);
         }
     }
 
     public void delete(long id) throws NoSuchAccountException, ApplicationPersistenceException{
-        //Existence check
-        Account account = get(id);
-
         try {
             Session session = HibernateSessionFactory.getSessionFactory().openSession();
             Transaction transaction = session.beginTransaction();
 
+            //Existence check
+            Account account = session.get(Account.class, id);
+            if (null == account) {
+                throw new NoSuchAccountException("No account exists with id: " + id);
+            }
             session.delete(account);
 
             transaction.commit();
             session.close();
         } catch (HibernateException e) {
-            throw new ApplicationPersistenceException("Problems while executing #delete() method. Check database connection.");
+            throw new ApplicationPersistenceException("Problems while executing #delete() method. Check database connection.", e);
         }
     }
 }
