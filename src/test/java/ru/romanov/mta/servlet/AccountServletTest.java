@@ -9,6 +9,7 @@ import ru.romanov.mta.persistence.HibernateSessionFactory;
 import ru.romanov.mta.persistence.entity.Account;
 import ru.romanov.mta.persistence.exception.ApplicationPersistenceException;
 import ru.romanov.mta.persistence.repository.AccountRepository;
+import ru.romanov.mta.service.converter.ModelConverter;
 import ru.romanov.mta.servlet.model.AccountModel;
 
 import javax.ws.rs.client.Entity;
@@ -16,13 +17,27 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AccountServletTest extends JerseyTest {
 
+    private static int TEST_ACCOUNTS_COUNT = 5;
+    private static final double ACCOUNT_MIN_BALANCE = 1000.0;
+
+    private static AccountRepository accountRepository;
+
+    private static List<AccountModel> storedAccounts;
+
     @BeforeClass
     public static void beforeClass() {
+        storedAccounts = new ArrayList<>();
+        accountRepository = new AccountRepository();
+
         populateDatabaseWithTestData();
     }
 
@@ -31,6 +46,16 @@ public class AccountServletTest extends JerseyTest {
         HibernateSessionFactory.closeSessionFactory();
     }
 
+/*    @Before
+    public void setUpAccounts() {
+        try {
+            List<Account> accounts = accountRepository.getAll();
+            storedAccounts = accounts.stream().map(ModelConverter::toModel).collect(Collectors.toList());
+        } catch (ApplicationPersistenceException e) {
+            e.printStackTrace();
+        }
+    }*/
+
     @Override
     protected Application configure() {
         forceSet(TestProperties.CONTAINER_PORT, "0");
@@ -38,21 +63,17 @@ public class AccountServletTest extends JerseyTest {
     }
 
     private static void populateDatabaseWithTestData() {
-        AccountRepository accountRepository = new AccountRepository();
         try {
-            Account account = new Account();
-            account.setHolderName("a");
-            account.setBalance(11.0);
-            accountRepository.create(account);
-
-            account.setHolderName("b");
-            account.setBalance(22.0);
-            accountRepository.create(account);
-
-            account.setHolderName("c");
-            account.setBalance(33.0);
-            accountRepository.create(account);
-        } catch (ApplicationPersistenceException ignore) {}
+            for (int i = 0; i < TEST_ACCOUNTS_COUNT; i++) {
+                Account account = new Account();
+                account.setHolderName(String.valueOf(i));
+                account.setBalance((i + 1) * ACCOUNT_MIN_BALANCE);
+                accountRepository.create(account);
+                storedAccounts.add(ModelConverter.toModel(account));
+            }
+        } catch (ApplicationPersistenceException e) {
+            e.printStackTrace();
+        }
     }
 
     //-----------------------------------
@@ -103,10 +124,14 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void updateAccount_whenHolderNameIsNull_thenBadRequest() {
         //Given
-        AccountModel account = new AccountModel();
-        account.setId(1);
-        account.setBalance(0.0);
-        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Random random = new Random();
+        AccountModel randomAccount = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+
+        AccountModel accountToUpdate = new AccountModel();
+        accountToUpdate.setId(randomAccount.getId());
+        accountToUpdate.setHolderName(null);
+        accountToUpdate.setBalance(randomAccount.getBalance());
+        Entity<AccountModel> accountEntity = Entity.entity(accountToUpdate, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().put(accountEntity);
@@ -118,11 +143,14 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void updateAccount_whenBalanceIsNegative_thenBadRequest() {
         //Given
-        AccountModel account = new AccountModel();
-        account.setId(1);
-        account.setHolderName("");
-        account.setBalance(-1.0);
-        Entity<AccountModel> accountEntity = Entity.entity(account, MediaType.APPLICATION_JSON);
+        Random random = new Random();
+        AccountModel randomAccount = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+
+        AccountModel accountToUpdate = new AccountModel();
+        accountToUpdate.setId(randomAccount.getId());
+        accountToUpdate.setHolderName(randomAccount.getHolderName());
+        accountToUpdate.setBalance(-1.0);
+        Entity<AccountModel> accountEntity = Entity.entity(accountToUpdate, MediaType.APPLICATION_JSON);
 
         //When
         Response response = target("/account").request().put(accountEntity);
@@ -188,13 +216,11 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void getAccount_whenAccountExists_thenOkAndAccountJson() {
         //Given
-        AccountModel expectedAccountModel = new AccountModel();
-        expectedAccountModel.setId(1);
-        expectedAccountModel.setHolderName("a");
-        expectedAccountModel.setBalance(11.0);
+        Random random = new Random();
+        AccountModel expectedAccountModel = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
 
         //When
-        Response response = target("/account/1").request().get();
+        Response response = target("/account/" + expectedAccountModel.getId()).request().get();
 
         //Then
         AccountModel receivedAccountModel = response.readEntity(AccountModel.class);
@@ -209,9 +235,10 @@ public class AccountServletTest extends JerseyTest {
     @Test
     public void createAccount_whenCreateAccountSucceed_thenOkAndAccountJson() {
         //Given
+        Random random = new Random();
         AccountModel accountToCreate = new AccountModel();
-        accountToCreate.setHolderName("d");
-        accountToCreate.setBalance(44.0);
+        accountToCreate.setHolderName(String.valueOf(random.nextInt()));
+        accountToCreate.setBalance((random.nextDouble() + 1) * ACCOUNT_MIN_BALANCE);
         Entity<AccountModel> accountEntity = Entity.entity(accountToCreate, MediaType.APPLICATION_JSON);
 
         //When
@@ -226,16 +253,16 @@ public class AccountServletTest extends JerseyTest {
     }
 
     /**
-     * This test based on database initialization data.
-     * @see #populateDatabaseWithTestData()
+     * Not thread safe test
      */
     @Test
     public void updateAccount_whenUpdateAccountSucceed_thenOkAndAccountJson() {
         //Given
-        AccountModel accountToUpdate = new AccountModel();
-        accountToUpdate.setId(2);
-        accountToUpdate.setHolderName("b_u");
-        accountToUpdate.setBalance(23.0);
+        Random random = new Random();
+        AccountModel accountToUpdate = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+
+        accountToUpdate.setHolderName(String.valueOf(random.nextInt()));
+        accountToUpdate.setBalance((random.nextDouble() + 1) * ACCOUNT_MIN_BALANCE);
         Entity<AccountModel> accountEntity = Entity.entity(accountToUpdate, MediaType.APPLICATION_JSON);
 
         //When
@@ -248,15 +275,21 @@ public class AccountServletTest extends JerseyTest {
     }
 
     /**
-     * This test based on database initialization data.
-     * @see #populateDatabaseWithTestData()
+     * Not thread safe test
      */
     @Test
     public void deleteAccount_whenDeleteAccountSucceed_thenOk() {
+        //Given
+        Random random = new Random();
+        AccountModel accountToDelete = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+        long accountToDeleteId = accountToDelete.getId();
+
         //When
-        Response response = target("/account/3").request().delete();
+        Response response = target("/account/" + accountToDeleteId).request().delete();
 
         //Then
+        TEST_ACCOUNTS_COUNT--;
+        storedAccounts.remove(accountToDeleteId);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 }

@@ -8,11 +8,14 @@ import ru.romanov.mta.persistence.repository.AccountRepository;
 import ru.romanov.mta.servlet.model.AccountModel;
 
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class AccountService {
 
     private AccountRepository accountRepository = new AccountRepository();
+
+    private AccountLockService accountLockService = AccountLockService.getInstance();
 
     /**
      * Gets Account by identifier as {@link AccountModel}
@@ -22,7 +25,15 @@ public class AccountService {
      * @throws ApplicationPersistenceException if problems with database connection
      */
     public AccountModel getAccount(long id) throws NoSuchAccountException, ApplicationPersistenceException {
-        return ModelConverter.toModel(accountRepository.get(id));
+        AccountModel accountModel;
+        ReentrantLock lock = accountLockService.getLock(id);
+        lock.lock();
+        try {
+            accountModel = ModelConverter.toModel(accountRepository.get(id));
+        } finally {
+            lock.unlock();
+        }
+        return accountModel;
     }
 
     /**
@@ -41,8 +52,15 @@ public class AccountService {
      * @throws ApplicationPersistenceException if problems with database connection
      */
     public AccountModel createAccount(AccountModel accountModel) throws ApplicationPersistenceException {
-        Account createdAccount = accountRepository.create(ModelConverter.toEntity(accountModel));
-        return ModelConverter.toModel(createdAccount);
+        AccountModel createdAccount;
+        ReentrantLock lock = accountLockService.getLock(accountModel.getId());
+        lock.lock();
+        try {
+            createdAccount = ModelConverter.toModel(accountRepository.create(ModelConverter.toEntity(accountModel)));
+        } finally {
+            lock.unlock();
+        }
+        return createdAccount;
     }
 
     /**
@@ -55,7 +73,13 @@ public class AccountService {
      */
     public void updateAccount(AccountModel accountModel) throws NoSuchAccountException,
             ApplicationPersistenceException {
-        accountRepository.update(ModelConverter.toEntity(accountModel));
+        ReentrantLock lock = accountLockService.getLock(accountModel.getId());
+        lock.lock();
+        try {
+            accountRepository.update(ModelConverter.toEntity(accountModel));
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -65,6 +89,12 @@ public class AccountService {
      * @throws ApplicationPersistenceException if problems with database connection
      */
     public void deleteAccount(long accountId) throws NoSuchAccountException, ApplicationPersistenceException {
-        accountRepository.delete(accountId);
+        ReentrantLock lock = accountLockService.getLock(accountId);
+        lock.lock();
+        try {
+            accountRepository.delete(accountId);
+        } finally {
+            lock.unlock();
+        }
     }
 }

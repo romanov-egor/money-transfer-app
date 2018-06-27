@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -30,7 +31,7 @@ import static org.junit.Assert.fail;
 public class TransferServiceTest extends JerseyTest {
 
     private static final int EXECUTOR_THREADS_COUNT = 4;
-    private static final int EXECUTIONS_COUNT = 100;
+    private static final int EXECUTIONS_COUNT = 40;
     private static final int TEST_ACCOUNTS_COUNT = 10;
     private static final double ACCOUNT_MIN_BALANCE = 1000.0;
 
@@ -53,6 +54,16 @@ public class TransferServiceTest extends JerseyTest {
         HibernateSessionFactory.closeSessionFactory();
     }
 
+    @Before
+    public void setUpAccounts() {
+        try {
+            List<Account> accounts = accountRepository.getAll();
+            storedAccounts = accounts.stream().map(ModelConverter::toModel).collect(Collectors.toList());
+        } catch (ApplicationPersistenceException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     protected Application configure() {
         forceSet(TestProperties.CONTAINER_PORT, "0");
@@ -69,24 +80,37 @@ public class TransferServiceTest extends JerseyTest {
                 storedAccounts.add(ModelConverter.toModel(account));
             }
         } catch (ApplicationPersistenceException e) {
-
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Check sender balance update in concurrent environment
+     */
     @Test
-    public void transfer_whenParallelTransferAllFromOneSender_thenCorrectSenderBalance() {
+    public void transfer_whenConcurrentTransferAllFromOneSender_thenCorrectSenderBalance() {
         //Given
         ExecutorService executorService = Executors.newFixedThreadPool(EXECUTOR_THREADS_COUNT);
         List<TransferModel> transfers = new ArrayList<>();
+
         Random random = new Random();
-        double expectedResult = ACCOUNT_MIN_BALANCE;
+        AccountModel randomSender = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+
+        double expectedResult = randomSender.getBalance();
+        double minBalance = storedAccounts.stream().min((a1, a2) -> a1.getBalance() < a2.getBalance() ? -1 : 1)
+                .get().getBalance();
 
         for (int i = 0; i < EXECUTIONS_COUNT; i++) {
             TransferModel transferModel = new TransferModel();
-            transferModel.setSenderId(1);
-            //RecipientId must be from 2 to TEST_ACCOUNTS_COUNT - 1
-            transferModel.setRecipientId(random.nextInt(TEST_ACCOUNTS_COUNT - 2) + 2);
-            double transferAmount = random.nextDouble() * ACCOUNT_MIN_BALANCE / EXECUTIONS_COUNT;
+            transferModel.setSenderId(randomSender.getId());
+
+            AccountModel randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            while (randomSender.getId() == randomRecipient.getId()) {
+                randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            }
+
+            transferModel.setRecipientId(randomRecipient.getId());
+            double transferAmount = random.nextDouble() * minBalance / EXECUTIONS_COUNT;
             transferModel.setTransferAmount(transferAmount);
             transfers.add(transferModel);
             expectedResult -= transferAmount;
@@ -108,15 +132,15 @@ public class TransferServiceTest extends JerseyTest {
         });
         executorService.shutdown();
         try {
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            executorService.awaitTermination(120, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         //Then
-        Account actualResult = null;
+        Double actualResult = null;
         try {
-            actualResult = accountRepository.get(1);
+            actualResult = accountRepository.get(randomSender.getId()).getBalance();
         } catch (NoSuchAccountException e) {
             System.out.println(e.getMessage() + " Wrong test data for " +
                     Thread.currentThread().getStackTrace()[1].getMethodName());
@@ -125,29 +149,42 @@ public class TransferServiceTest extends JerseyTest {
             e.printStackTrace();
         }
          if (actualResult != null) {
-            assertEquals(expectedResult, actualResult.getBalance(), 0.01);
+            assertEquals(expectedResult, actualResult, 0.01);
          } else {
             fail();
          }
     }
 
-    /*@Test
-    public void transfer_whenParallelTransferAllToOneRecipient_thenCorrectRecipientBalance() {
+    /**
+     * Check recipient balance update in concurrent environment
+     */
+    @Test
+    public void transfer_whenConcurrentTransferAllToOneRecipient_thenCorrectRecipientBalance() {
         //Given
         ExecutorService executorService = Executors.newFixedThreadPool(EXECUTOR_THREADS_COUNT);
         List<TransferModel> transfers = new ArrayList<>();
+
         Random random = new Random();
-        double expectedResult = ACCOUNT_MIN_BALANCE;
+        AccountModel randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+
+        double expectedResult = randomRecipient.getBalance();
+        double minBalance = storedAccounts.stream().min((a1, a2) -> a1.getBalance() < a2.getBalance() ? -1 : 1)
+                .get().getBalance();
 
         for (int i = 0; i < EXECUTIONS_COUNT; i++) {
             TransferModel transferModel = new TransferModel();
-            //SenderId must be from 2 to TEST_ACCOUNTS_COUNT - 1
-            transferModel.setSenderId(random.nextInt(TEST_ACCOUNTS_COUNT - 2) + 2);
-            transferModel.setRecipientId(1);
-            double transferAmount = random.nextDouble() * ACCOUNT_MIN_BALANCE / EXECUTIONS_COUNT;
+            transferModel.setRecipientId(randomRecipient.getId());
+
+            AccountModel randomSender = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            while (randomRecipient.getId() == randomSender.getId()) {
+                randomSender = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            }
+
+            transferModel.setSenderId(randomSender.getId());
+            double transferAmount = random.nextDouble() * minBalance / EXECUTIONS_COUNT;
             transferModel.setTransferAmount(transferAmount);
             transfers.add(transferModel);
-            expectedResult -= transferAmount;
+            expectedResult += transferAmount;
         }
 
         //When
@@ -166,15 +203,15 @@ public class TransferServiceTest extends JerseyTest {
         });
         executorService.shutdown();
         try {
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            executorService.awaitTermination(120, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         //Then
-        Account actualResult = null;
+        Double actualResult = null;
         try {
-            actualResult = accountRepository.get(1);
+            actualResult = accountRepository.get(randomRecipient.getId()).getBalance();
         } catch (NoSuchAccountException e) {
             System.out.println(e.getMessage() + " Wrong test data for " +
                     Thread.currentThread().getStackTrace()[1].getMethodName());
@@ -183,9 +220,152 @@ public class TransferServiceTest extends JerseyTest {
             e.printStackTrace();
         }
         if (actualResult != null) {
-            assertEquals(expectedResult, actualResult.getBalance(), 0.01);
+            assertEquals(expectedResult, actualResult, 0.01);
         } else {
             fail();
         }
-    }*/
+    }
+
+    /**
+     * Check that sender-recipient transfers never reach race condition
+     */
+    @Test
+    public void transfer_whenConcurrentTransferBetweenTwoAccounts_thenCorrectBalancesSum() {
+        //Given
+        ExecutorService executorService = Executors.newFixedThreadPool(EXECUTOR_THREADS_COUNT);
+        List<TransferModel> transfers = new ArrayList<>();
+
+        Random random = new Random();
+        AccountModel randomSender = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+        AccountModel randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+        while (randomRecipient.getId() == randomSender.getId()) {
+            randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+        }
+
+        double expectedResult = randomRecipient.getBalance() + randomSender.getBalance();
+        double minBalance = randomSender.getBalance() < randomRecipient.getBalance() ? randomSender.getBalance()
+                : randomRecipient.getBalance();
+
+        for (int i = 0; i < EXECUTIONS_COUNT; i++) {
+            TransferModel transferModel = new TransferModel();
+            if (random.nextBoolean()) {
+                transferModel.setSenderId(randomSender.getId());
+                transferModel.setRecipientId(randomRecipient.getId());
+            } else {
+                transferModel.setSenderId(randomRecipient.getId());
+                transferModel.setRecipientId(randomSender.getId());
+            }
+            double transferAmount = random.nextDouble() * minBalance / EXECUTIONS_COUNT;
+            transferModel.setTransferAmount(transferAmount);
+            transfers.add(transferModel);
+        }
+
+        //When
+        transfers.forEach(t -> {
+            executorService.submit(() -> {
+                try {
+                    transferService.transfer(t);
+                } catch (NotEnoughMoneyForTransferException | NoSuchAccountException e) {
+                    System.out.println(e.getMessage() + " Wrong test data for " +
+                            Thread.currentThread().getStackTrace()[1].getMethodName());
+                } catch (ApplicationPersistenceException e) {
+                    System.out.println("Wrong test config for class " + TransferServiceTest.class.getName());
+                    e.printStackTrace();
+                }
+            });
+        });
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(120, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        //Then
+        Double actualResult = null;
+        try {
+            Account actualSender = accountRepository.get(randomSender.getId());
+            Account actualRecipient = accountRepository.get(randomRecipient.getId());
+            actualResult = actualSender.getBalance() + actualRecipient.getBalance();
+        } catch (NoSuchAccountException e) {
+            System.out.println(e.getMessage() + " Wrong test data for " +
+                    Thread.currentThread().getStackTrace()[1].getMethodName());
+        } catch (ApplicationPersistenceException e) {
+            System.out.println("Wrong test config for class " + TransferServiceTest.class.getName());
+            e.printStackTrace();
+        }
+        if (actualResult != null) {
+            assertEquals(expectedResult, actualResult, 0.01);
+        } else {
+            fail();
+        }
+    }
+
+    /**
+     * Check common money transfer use case in concurrent environment
+     */
+    @Test
+    public void transfer_whenConcurrentTransferBetweenManyAccounts_thenCorrectBalancesSum() {
+        //Given
+        ExecutorService executorService = Executors.newFixedThreadPool(EXECUTOR_THREADS_COUNT);
+        List<TransferModel> transfers = new ArrayList<>();
+
+        double expectedResult = storedAccounts.stream().mapToDouble(a -> a.getBalance()).sum();
+
+        for (int i = 0; i < EXECUTIONS_COUNT; i++) {
+            Random random = new Random();
+            AccountModel randomSender = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            AccountModel randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            while (randomRecipient.getId() == randomSender.getId()) {
+                randomRecipient = storedAccounts.get(random.nextInt(TEST_ACCOUNTS_COUNT));
+            }
+
+            double minBalance = randomSender.getBalance() < randomRecipient.getBalance() ? randomSender.getBalance()
+                    : randomRecipient.getBalance();
+
+            TransferModel transferModel = new TransferModel();
+            transferModel.setSenderId(randomSender.getId());
+            transferModel.setRecipientId(randomRecipient.getId());
+            double transferAmount = random.nextDouble() * minBalance / EXECUTIONS_COUNT;
+            transferModel.setTransferAmount(transferAmount);
+            transfers.add(transferModel);
+        }
+
+        //When
+        transfers.forEach(t -> {
+            executorService.submit(() -> {
+                try {
+                    transferService.transfer(t);
+                } catch (NotEnoughMoneyForTransferException | NoSuchAccountException e) {
+                    System.out.println(e.getMessage() + " Wrong test data for " +
+                            Thread.currentThread().getStackTrace()[1].getMethodName());
+                } catch (ApplicationPersistenceException e) {
+                    System.out.println("Wrong test config for class " + TransferServiceTest.class.getName());
+                    e.printStackTrace();
+                }
+            });
+        });
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(120, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        //Then
+        Double actualResult = null;
+        try {
+            List<Account> accounts = accountRepository.getAll();
+            storedAccounts = accounts.stream().map(ModelConverter::toModel).collect(Collectors.toList());
+            actualResult = storedAccounts.stream().mapToDouble(a -> a.getBalance()).sum();
+        } catch (ApplicationPersistenceException e) {
+            System.out.println("Wrong test config for class " + TransferServiceTest.class.getName());
+            e.printStackTrace();
+        }
+        if (actualResult != null) {
+            assertEquals(expectedResult, actualResult, 0.01);
+        } else {
+            fail();
+        }
+    }
 }
