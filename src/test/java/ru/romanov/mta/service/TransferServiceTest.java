@@ -227,7 +227,7 @@ public class TransferServiceTest extends JerseyTest {
     }
 
     /**
-     * Check that sender-recipient transfers never reach race condition
+     * Check that sender-recipient transfers never reach deadlock
      */
     @Test
     public void transfer_whenConcurrentTransferBetweenTwoAccounts_thenCorrectBalancesSum() {
