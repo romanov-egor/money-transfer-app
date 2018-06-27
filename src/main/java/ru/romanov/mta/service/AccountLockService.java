@@ -6,7 +6,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Singleton class for account locks management. It's necessary to prevent simultaneous access to accounts
- * from different methods or threads
+ * from different threads
  *
  * @see AccountService
  * @see TransferService

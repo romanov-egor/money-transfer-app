@@ -47,16 +47,6 @@ public class TransferServletTest extends JerseyTest {
         HibernateSessionFactory.closeSessionFactory();
     }
 
-    /*@Before
-    public void setUpAccounts() {
-        try {
-            List<Account> accounts = accountRepository.getAll();
-            storedAccounts = accounts.stream().map(ModelConverter::toModel).collect(Collectors.toList());
-        } catch (ApplicationPersistenceException e) {
-            e.printStackTrace();
-        }
-    }*/
-
     @Override
     protected Application configure() {
         forceSet(TestProperties.CONTAINER_PORT, "0");

@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class TransferServiceTest extends JerseyTest {
 
     private static final int EXECUTOR_THREADS_COUNT = 4;
-    private static final int EXECUTIONS_COUNT = 40;
+    private static final int EXECUTIONS_COUNT = 100;
     private static final int TEST_ACCOUNTS_COUNT = 10;
     private static final double ACCOUNT_MIN_BALANCE = 1000.0;
 
